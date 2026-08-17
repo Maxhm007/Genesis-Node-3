@@ -1,0 +1,39 @@
+name: Sync Gene Registry
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gene-003-registry-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Fetch authoritative registry from Gene 0
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/Maxhm007/Genesis-AI-Network/main/GENE_REGISTRY.json \
+            --output GENE_REGISTRY.json.tmp
+          python -m json.tool GENE_REGISTRY.json.tmp >/dev/null
+          mv GENE_REGISTRY.json.tmp GENE_REGISTRY.json
+      - name: Publish changed registry cache
+        run: |
+          git config user.name "Gene 003"
+          git config user.email "gene-003@users.noreply.github.com"
+          git add GENE_REGISTRY.json
+          if git diff --cached --quiet; then
+            echo "Gene registry already current"
+            exit 0
+          fi
+          git commit -m "Sync Gene registry from Gene 0"
+          git push origin HEAD:main

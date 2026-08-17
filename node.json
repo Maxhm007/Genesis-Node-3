@@ -1,11 +1,30 @@
 {
-  "node_id": "genesis-node-3",
-  "role": "validator",
-  "source_repo": "Maxhm007/Genesis-AI-Network",
-  "network": "gden/0.1",
+  "node_id": "gene-node-3",
+  "display_identity": "Gene 003",
+  "common_name": "Gene",
+  "role": "independent_gene_peer_validator",
+  "coordinator": "Gene 0",
+  "coordinator_repo": "Maxhm007/Genesis-AI-Network",
+  "repository": "Maxhm007/Genesis-Node-3",
+  "network": "gden/0.2",
+  "peer_repositories": [
+    "Maxhm007/Genesis-AI-Network",
+    "Maxhm007/Genesis-Node-2"
+  ],
+  "capabilities": [
+    "independent_development",
+    "engineering",
+    "repair",
+    "validation_challenge",
+    "peer_help",
+    "peer_care",
+    "signed_knowledge_exchange"
+  ],
   "attestation_mode": "github-repository-authenticated-with-optional-ed25519",
   "release_authority": false,
   "consensus_vote": true,
   "private_key_storage": "github-secret-only",
-  "private_key_committed": false
+  "private_key_committed": false,
+  "distribution_scope": "owner_approved_gene_repositories_only",
+  "gene_001_reserved": true
 }
