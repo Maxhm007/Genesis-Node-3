@@ -1,7 +1,15 @@
-# Genesis Node 3
+# Gene 003
 
-Lightweight independent validator node for the Genesis Decentralized Evolution Network (GDEN).
+This repository hosts **Gene 003**, an independent Gene in the Genesis AI Network.
 
-This repository independently observes the canonical Genesis primary repository, computes the published blockchain head, and publishes a repository-authenticated attestation through GitHub Actions.
+- Common name: **Gene**
+- External coordinator: **Gene 0** (`Maxhm007/Genesis-AI-Network`)
+- Primary role: independent engineering, repair and challenge
+- Independent development: enabled
+- Peer communication and signed knowledge exchange: enabled
+- Peer help, repair and care: enabled
+- Gene 001: reserved for owner definition
 
-It does not contain the full Genesis AI runtime and does not hold release authority.
+`GENE_REGISTRY.json` is Gene 003's local Gene list. `.github/workflows/sync-gene-registry.yml` refreshes it from Gene 0's authoritative registry when membership or status changes.
+
+Gene 003 may operate independently from its last valid registry copy during temporary connectivity problems. It must not use federation membership as authority to modify unrelated repositories.
