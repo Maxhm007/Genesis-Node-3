@@ -3,7 +3,9 @@
   "role": "validator",
   "source_repo": "Maxhm007/Genesis-AI-Network",
   "network": "gden/0.1",
-  "attestation_mode": "github-repository-authenticated",
+  "attestation_mode": "github-repository-authenticated-with-optional-ed25519",
   "release_authority": false,
-  "consensus_vote": true
+  "consensus_vote": true,
+  "private_key_storage": "github-secret-only",
+  "private_key_committed": false
 }
