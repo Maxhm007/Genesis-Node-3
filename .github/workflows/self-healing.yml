@@ -1,0 +1,40 @@
+name: Genesis Self Healing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  NODE_ID: genesis-node-3
+  PEER_REPOS: Maxhm007/Genesis-AI-Network,Maxhm007/Genesis-Node-2
+
+jobs:
+  self_heal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Local self-heal
+        id: local
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/node_self_heal.py
+      - name: Ask peers if local repair failed
+        if: steps.local.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GENESIS_NETWORK_TOKEN }}
+        run: python scripts/request_peer_healing.py
+      - name: Fail only after peer request is recorded
+        if: steps.local.outcome == 'failure'
+        run: exit 1
