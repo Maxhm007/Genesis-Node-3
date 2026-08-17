@@ -1,0 +1,27 @@
+{
+  "gene": "Gene 003",
+  "logical_id": "gene-node-3",
+  "learning_mode": "independent",
+  "memory_scope": "local_gene_history",
+  "learn_from": [
+    "engineering",
+    "repairs",
+    "experiments",
+    "benchmark_results",
+    "task_outcomes",
+    "failures",
+    "peer_feedback"
+  ],
+  "sharing": {
+    "peer_learning_allowed": true,
+    "share_only_validated_lessons": true,
+    "signed_knowledge_required": true,
+    "peer_lessons_are_authority": false,
+    "peer_lessons_enter_as_candidates": true,
+    "recipient_decisions": ["adopt", "challenge", "reject", "defer"]
+  },
+  "coordination": {
+    "external_contact": "Gene 0",
+    "gene_0_may_overwrite_local_learning": false
+  }
+}
