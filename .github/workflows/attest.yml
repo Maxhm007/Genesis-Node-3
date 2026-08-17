@@ -23,6 +23,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Observe primary chain and write attestation
+        env:
+          GENESIS_NODE_PRIVATE_KEY_PEM: ${{ secrets.GENESIS_NODE_PRIVATE_KEY_PEM }}
         run: python scripts/attest.py
       - name: Publish attestation
         shell: bash
@@ -30,6 +32,7 @@ jobs:
           git config user.name "Genesis Node 3"
           git config user.email "genesis-node-3@users.noreply.github.com"
           git add attestation.json
+          if [ -f node_public_key.pem ]; then git add node_public_key.pem; fi
           if git diff --cached --quiet; then
             echo "No attestation change"
             exit 0
