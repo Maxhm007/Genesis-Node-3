@@ -1,68 +1,61 @@
 #!/usr/bin/env python3
-"""Quorum-based Genesis cross-node recovery coordinator."""
 from __future__ import annotations
-import json, os, re, subprocess, sys
+import json, os, subprocess, urllib.request
+REQ='[genesis-recovery-request]'; VOTE='[genesis-peer-vote]'
 
-PREFIX = "[genesis-peer-heal]"
-VOTE_PREFIX = "peer_vote:"
-
-def gh(endpoint: str, *, method: str = "GET", payload=None, allow_fail: bool = False):
-    cmd = ["gh", "api", "--method", method, endpoint]; data = None
-    if payload is not None:
-        cmd += ["--input", "-"]; data = json.dumps(payload)
-    proc = subprocess.run(cmd, input=data, text=True, capture_output=True)
-    if proc.returncode:
-        if allow_fail: return None
-        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip())
-    text = proc.stdout.strip(); return json.loads(text) if text else {}
-
-def parse_body(body: str):
-    out = {}
-    for line in body.splitlines():
-        if ":" in line:
-            key, value = line.split(":", 1); key = key.strip()
-            if key in {"source_node","source_repo","source_run_id","source_run_url"}: out[key] = value.strip()
-    return out
-
-def issue_comments(repo, number): return gh(f"repos/{repo}/issues/{number}/comments?per_page=100") or []
-def comment(repo, number, body): gh(f"repos/{repo}/issues/{number}/comments", method="POST", payload={"body": body})
-def close_issue(repo, number): gh(f"repos/{repo}/issues/{number}", method="PATCH", payload={"state": "closed"})
-def latest_success(repo):
-    runs = gh(f"repos/{repo}/actions/workflows/self-healing.yml/runs?per_page=5", allow_fail=True)
-    if not runs: return False
-    for run in runs.get("workflow_runs", []):
-        if run.get("status") == "completed": return run.get("conclusion") == "success"
-    return False
-
-def coord_issue(repo, run_id, node):
-    title = f"[genesis-network-repair] {node} run {run_id}"
-    for item in gh(f"repos/{repo}/issues?state=open&per_page=100") or []:
-        if item.get("title") == title: return int(item["number"])
-    created = gh(f"repos/{repo}/issues", method="POST", payload={"title": title, "body": f"Genesis network repair coordination.\n\nsource_node: {node}\nsource_run_id: {run_id}\npolicy: self-heal first; peer recovery requires 2-of-3 quorum.\n"})
-    return int(created["number"])
-def voters(repo, number):
-    result=set()
-    for item in issue_comments(repo, number):
-        m=re.search(r"peer_vote:\s*([A-Za-z0-9_.-]+)", item.get("body") or "")
-        if m: result.add(m.group(1))
-    return result
-def dispatch(repo): return gh(f"repos/{repo}/actions/workflows/self-healing.yml/dispatches", method="POST", payload={"ref":"main"}, allow_fail=True) is not None
-
+def pub(repo,path):
+    q=urllib.request.Request(f'https://api.github.com/repos/{repo}/{path}',headers={'Accept':'application/vnd.github+json','User-Agent':'genesis-peer-heal'})
+    with urllib.request.urlopen(q,timeout=20) as r: return json.load(r)
+def gh(ep,method='GET',payload=None):
+    cmd=['gh','api','--method',method,ep]; data=None
+    if payload is not None: cmd+=['--input','-']; data=json.dumps(payload)
+    p=subprocess.run(cmd,input=data,text=True,capture_output=True)
+    if p.returncode: raise RuntimeError(p.stderr.strip() or p.stdout.strip())
+    t=p.stdout.strip(); return json.loads(t) if t else {}
+def meta(body):
+    o={}
+    for line in (body or '').splitlines():
+        if ':' in line:
+            k,v=line.split(':',1); k=k.strip()
+            if k in {'source_node','source_repo','source_run_id'}: o[k]=v.strip()
+    return o
+def unhealthy(repo):
+    try: runs=pub(repo,'actions/workflows/self-healing.yml/runs?per_page=5').get('workflow_runs',[])
+    except Exception: return True
+    for r in runs:
+        if r.get('status')=='completed': return r.get('conclusion')!='success'
+    return True
+def vote(own,node,target,source,run_id):
+    title=f'{VOTE} {source} {run_id}'; issues=gh(f'repos/{own}/issues?state=open&per_page=100')
+    if any(i.get('title')==title for i in issues): return
+    body=f'Genesis peer recovery vote.\n\nvoter_node: {node}\ntarget_repo: {target}\nsource_node: {source}\nsource_run_id: {run_id}\nverdict: approve_conservative_recovery\n'
+    gh(f'repos/{own}/issues',method='POST',payload={'title':title,'body':body})
+def count(peers,target,source,run_id):
+    title=f'{VOTE} {source} {run_id}'; n=0
+    for p in peers:
+        try:
+            if any(i.get('title')==title and f'target_repo: {target}' in (i.get('body') or '') for i in pub(p,'issues?state=open&per_page=100')): n+=1
+        except Exception: pass
+    return n
+def close(repo,n,msg):
+    gh(f'repos/{repo}/issues/{n}/comments',method='POST',payload={'body':msg}); gh(f'repos/{repo}/issues/{n}',method='PATCH',payload={'state':'closed'})
 def main():
-    if not (os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN")):
-        print("GENESIS_NETWORK_TOKEN missing; cross-node healing is disabled.", file=sys.stderr); return 1
-    node=os.getenv("NODE_ID","genesis-node-unknown"); own=os.getenv("GITHUB_REPOSITORY") or os.getenv("NODE_REPO")
-    if not own: return 1
-    requests=[i for i in (gh(f"repos/{own}/issues?state=open&per_page=100") or []) if (i.get("title") or "").startswith(PREFIX)]
-    if not requests: print("No peer recovery requests."); return 0
-    for req in requests:
-        meta=parse_body(req.get("body") or ""); repo=meta.get("source_repo"); run_id=meta.get("source_run_id","unknown"); source=meta.get("source_node","unknown"); number=int(req["number"])
-        if not repo: comment(own,number,"Invalid recovery request: missing source_repo."); continue
-        if latest_success(repo): comment(own,number,f"Recovery verified by {node}: target self-healing is healthy."); close_issue(own,number); continue
-        coordination=coord_issue(repo,run_id,source); current=voters(repo,coordination)
-        if node not in current: comment(repo,coordination,f"{VOTE_PREFIX} {node}\naction: approve conservative recovery")
-        current=voters(repo,coordination); comment(own,number,f"{node} voted for recovery. quorum={len(current)}/2")
-        if len(current)>=2:
-            comment(own,number,"Quorum reached. Target self-healing dispatched; awaiting healthy verification." if dispatch(repo) else "Quorum reached, but target self-healing could not be dispatched. Escalation remains open.")
+    node=os.getenv('NODE_ID','genesis-node-3'); own=os.getenv('GITHUB_REPOSITORY') or os.getenv('NODE_REPO'); peers=[p.strip() for p in os.getenv('PEER_REPOS','').split(',') if p.strip()]
+    for peer in peers:
+        try: issues=pub(peer,'issues?state=open&per_page=100')
+        except Exception: continue
+        for req in issues:
+            if not (req.get('title') or '').startswith(REQ): continue
+            m=meta(req.get('body')); target=m.get('source_repo'); source=m.get('source_node'); run_id=m.get('source_run_id')
+            if target==peer and source and run_id and unhealthy(target): vote(own,node,target,source,run_id)
+    for req in gh(f'repos/{own}/issues?state=open&per_page=100'):
+        if not (req.get('title') or '').startswith(REQ): continue
+        m=meta(req.get('body')); source=m.get('source_node'); run_id=m.get('source_run_id')
+        if not source or not run_id: continue
+        if not unhealthy(own): close(own,req['number'],'Self-healing is healthy again; closing recovery request.'); continue
+        n=count(peers,own,source,run_id)
+        if n>=2:
+            gh(f'repos/{own}/actions/workflows/self-healing.yml/dispatches',method='POST',payload={'ref':'main'}); close(own,req['number'],f'Peer quorum reached ({n}/2). Local self-healing dispatched.')
+        else: print(f'Awaiting peer quorum: {n}/2')
     return 0
-if __name__ == "__main__": raise SystemExit(main())
+if __name__=='__main__': raise SystemExit(main())
