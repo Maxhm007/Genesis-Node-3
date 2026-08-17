@@ -1,0 +1,9 @@
+{
+  "node_id": "genesis-node-3",
+  "role": "validator",
+  "source_repo": "Maxhm007/Genesis-AI-Network",
+  "network": "gden/0.1",
+  "attestation_mode": "github-repository-authenticated",
+  "release_authority": false,
+  "consensus_vote": true
+}
