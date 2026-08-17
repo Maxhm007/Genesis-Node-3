@@ -30,11 +30,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/node_self_heal.py
-      - name: Ask peers if local repair failed
+      - name: Publish recovery request if local repair failed
         if: steps.local.outcome == 'failure'
         env:
-          GH_TOKEN: ${{ secrets.GENESIS_NETWORK_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/request_peer_healing.py
-      - name: Fail only after peer request is recorded
+      - name: Fail only after recovery request is recorded
         if: steps.local.outcome == 'failure'
         run: exit 1
