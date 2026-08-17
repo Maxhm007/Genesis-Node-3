@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "registry_authority": "Gene 0",
+  "common_name": "Gene",
+  "source_repository": "Maxhm007/Genesis-AI-Network",
+  "reserved": [{"display_identity": "Gene 001", "serial": 1, "status": "reserved_for_owner_definition"}],
+  "genes": [
+    {"display_identity": "Gene 0", "serial": 0, "logical_id": "gene-node-1", "repository": "Maxhm007/Genesis-AI-Network", "role": "main_core_external_coordinator", "status": "active"},
+    {"display_identity": "Gene 002", "serial": 2, "logical_id": "gene-node-2", "repository": "Maxhm007/Genesis-Node-2", "role": "independent_research_validation_gene", "status": "active"},
+    {"display_identity": "Gene 003", "serial": 3, "logical_id": "gene-node-3", "repository": "Maxhm007/Genesis-Node-3", "role": "independent_engineering_repair_gene", "status": "active"}
+  ],
+  "cache_owner": "Gene 003",
+  "cache_rule": "Refresh from Gene 0 authoritative registry when changed."
+}
