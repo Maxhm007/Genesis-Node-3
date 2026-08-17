@@ -17,7 +17,7 @@ def meta(body):
     for line in (body or '').splitlines():
         if ':' in line:
             k,v=line.split(':',1); k=k.strip()
-            if k in {'source_node','source_repo','source_run_id'}: o[k]=v.strip()
+            if k in {'source_node','source_repo','source_run_id','simulation'}: o[k]=v.strip()
     return o
 def unhealthy(repo):
     try: runs=pub(repo,'actions/workflows/self-healing.yml/runs?per_page=5').get('workflow_runs',[])
@@ -25,10 +25,10 @@ def unhealthy(repo):
     for r in runs:
         if r.get('status')=='completed': return r.get('conclusion')!='success'
     return True
-def vote(own,node,target,source,run_id):
+def vote(own,node,target,source,run_id,simulation=False):
     title=f'{VOTE} {source} {run_id}'; issues=gh(f'repos/{own}/issues?state=open&per_page=100')
     if any(i.get('title')==title for i in issues): return
-    body=f'Genesis peer recovery vote.\n\nvoter_node: {node}\ntarget_repo: {target}\nsource_node: {source}\nsource_run_id: {run_id}\nverdict: approve_conservative_recovery\n'
+    body=f'Genesis peer recovery vote.\n\nvoter_node: {node}\ntarget_repo: {target}\nsource_node: {source}\nsource_run_id: {run_id}\nsimulation: {str(simulation).lower()}\nverdict: approve_conservative_recovery\n'
     gh(f'repos/{own}/issues',method='POST',payload={'title':title,'body':body})
 def count(peers,target,source,run_id):
     title=f'{VOTE} {source} {run_id}'; n=0
@@ -46,16 +46,17 @@ def main():
         except Exception: continue
         for req in issues:
             if not (req.get('title') or '').startswith(REQ): continue
-            m=meta(req.get('body')); target=m.get('source_repo'); source=m.get('source_node'); run_id=m.get('source_run_id')
-            if target==peer and source and run_id and unhealthy(target): vote(own,node,target,source,run_id)
+            m=meta(req.get('body')); target=m.get('source_repo'); source=m.get('source_node'); run_id=m.get('source_run_id'); sim=m.get('simulation','false').lower()=='true'
+            if target==peer and source and run_id and (sim or unhealthy(target)): vote(own,node,target,source,run_id,sim)
     for req in gh(f'repos/{own}/issues?state=open&per_page=100'):
         if not (req.get('title') or '').startswith(REQ): continue
-        m=meta(req.get('body')); source=m.get('source_node'); run_id=m.get('source_run_id')
+        m=meta(req.get('body')); source=m.get('source_node'); run_id=m.get('source_run_id'); sim=m.get('simulation','false').lower()=='true'
         if not source or not run_id: continue
-        if not unhealthy(own): close(own,req['number'],'Self-healing is healthy again; closing recovery request.'); continue
+        if not sim and not unhealthy(own): close(own,req['number'],'Self-healing is healthy again; closing recovery request.'); continue
         n=count(peers,own,source,run_id)
         if n>=2:
-            gh(f'repos/{own}/actions/workflows/self-healing.yml/dispatches',method='POST',payload={'ref':'main'}); close(own,req['number'],f'Peer quorum reached ({n}/2). Local self-healing dispatched.')
+            gh(f'repos/{own}/actions/workflows/self-healing.yml/dispatches',method='POST',payload={'ref':'main'})
+            close(own,req['number'],f'Peer quorum reached ({n}/2). Local self-healing dispatched.' + (' Simulation passed.' if sim else ''))
         else: print(f'Awaiting peer quorum: {n}/2')
     return 0
 if __name__=='__main__': raise SystemExit(main())
