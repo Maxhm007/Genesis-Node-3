@@ -7,6 +7,15 @@
   "coordinator_repo": "Maxhm007/Genesis-AI-Network",
   "repository": "Maxhm007/Genesis-Node-3",
   "network": "gden/0.2",
+  "model_profile": {
+    "model": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    "license": "MIT",
+    "runtime_policy": "local_or_owner_provided_compute",
+    "specialization": ["reasoning", "engineering", "coding", "repair", "challenge"],
+    "identity_binding": false,
+    "replaceable": true,
+    "replacement_policy": "benchmark_driven"
+  },
   "peer_repositories": [
     "Maxhm007/Genesis-AI-Network",
     "Maxhm007/Genesis-Node-2"
