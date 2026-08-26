@@ -1,0 +1,43 @@
+name: Inherit Gene 0 Capabilities
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gene-003-gene0-capability-inheritance
+  cancel-in-progress: false
+
+jobs:
+  inherit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch, verify and validate Gene 0 capabilities
+        run: python scripts/sync_from_gene0.py
+      - name: Revalidate inherited core
+        if: hashFiles('inherited/gene0/core/descendant_health.py') != ''
+        run: python inherited/gene0/core/descendant_health.py --repo .
+      - name: Publish validated inherited release
+        run: |
+          git config user.name "Gene 003"
+          git config user.email "gene-003@users.noreply.github.com"
+          git add GENE0_INHERITANCE_STATE.json inherited/gene0
+          if git diff --cached --quiet; then
+            echo "Gene 0 capabilities already current"
+            exit 0
+          fi
+          git commit -m "Inherit validated capabilities from Gene 0"
+          git pull --rebase origin main
+          git push origin HEAD:main
