@@ -2,6 +2,12 @@ name: Inherit Gene 0 Capabilities
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/inherit-gene0-capabilities.yml
+      - scripts/sync_from_gene0.py
   schedule:
     - cron: '37 * * * *'
 
