@@ -1,0 +1,34 @@
+{
+  "inherited_files": [
+    {
+      "sha256": "e61dc0ff29f791c666b69a16bc5d2f3939d8a75be1a17f6aa4c501416962f4e4",
+      "target": "inherited/gene0/policies/GENESIS_CONSTITUTION.md"
+    },
+    {
+      "sha256": "0b6e3cb2a77172f037eb8483a598eac5d6f66825ac419017503f02ad1947f217",
+      "target": "inherited/gene0/policies/KNOWLEDGE_POLICY.md"
+    },
+    {
+      "sha256": "9c1391f293ac4f3d5edf28ec05c1d65d3c611e34f09da13cb0ea11a851adffad",
+      "target": "inherited/gene0/policies/AUTONOMY_SPEC.md"
+    },
+    {
+      "sha256": "0408c4780ba91e96962367aed50e886a7ef054e5dd63b42a80e72b63922a1b31",
+      "target": "inherited/gene0/policies/DISTRIBUTION_PROTOCOL.md"
+    },
+    {
+      "sha256": "0daa59121c50b5e47d6ed4408d85a0e68ba2f2b155894b345cecd1cb048067bd",
+      "target": "inherited/gene0/core/CAPABILITIES.json"
+    },
+    {
+      "sha256": "78f06ddeafe7e630848be57d6c858ef0c0f0555392eca2089fcc7eb1588f8c7f",
+      "target": "inherited/gene0/core/descendant_health.py"
+    }
+  ],
+  "node_id": "gene-node-3",
+  "publisher_repository": "Maxhm007/Genesis-AI-Network",
+  "release_id": "1e669aa3b823b2cde8f453e9bff2af58424b938179fbe7a1d7a8a6de5bc3d741",
+  "release_version": "1.0.0",
+  "schema_version": 1,
+  "source_commit": "317b81dd4230fe5657687695ad56ff785c2abc25"
+}
